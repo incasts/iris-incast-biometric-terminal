@@ -1,0 +1,238 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#101713">
+<title>IRIS | Incast Biometric Registration Terminal</title>
+<style>
+:root{--bg:#0b100d;--panel:#111a14;--panel2:#17231a;--line:#2b4432;--green:#8cc99a;--bright:#c2efcb;--muted:#91a397;--white:#e8f0e9;--red:#d98a78}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at 50% -15%,#203427 0%,#101913 38%,#080c09 78%);color:var(--white);font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:22px}
+.shell{width:min(960px,100%);border:1px solid #35523d;background:rgba(10,16,12,.96);box-shadow:0 25px 90px #000b,0 0 45px #4b9b5a12;border-radius:13px;overflow:hidden}
+.top{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:17px 22px;border-bottom:1px solid var(--line);background:#101a13}
+.brand{font-weight:800;letter-spacing:.18em;color:var(--bright);font-size:14px}.brand small{display:block;color:#7f9a85;font-weight:400;font-size:9px;letter-spacing:.16em;margin-top:5px}
+.status{font-size:10px;color:var(--green);letter-spacing:.12em}.status:before{content:"";display:inline-block;width:7px;height:7px;border-radius:50%;background:#7bd68d;box-shadow:0 0 10px #7bd68d;margin-right:8px}
+.content{padding:clamp(18px,4vw,38px)}.eyebrow{font-size:10px;letter-spacing:.2em;color:var(--green);margin:0 0 12px}
+h1{font-size:clamp(21px,4vw,32px);letter-spacing:.06em;margin:0 0 9px;font-weight:650}.sub{color:var(--muted);font-size:12px;line-height:1.7;margin:0}
+.steps{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin:26px 0 22px}
+.step{border:1px solid #263a2b;background:#101811;padding:11px 12px;border-radius:6px;min-width:0}
+.step.active{border-color:#78b987;background:#17251a;box-shadow:inset 0 0 18px #70bd7c10}
+.step.done{border-color:#456f4d}.step .num{font-size:9px;color:#78947e;letter-spacing:.12em}.step .name{font-size:11px;margin-top:6px;color:#c7d6ca;letter-spacing:.04em}.step.active .name,.step.done .name{color:var(--bright)}
+.stage{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(230px,.8fr);gap:18px}
+.visual{position:relative;min-height:340px;background:#080e0a;border:1px solid #2b4432;border-radius:8px;overflow:hidden;display:flex;align-items:center;justify-content:center}
+#video{position:absolute;width:100%;height:100%;object-fit:cover;transform:scaleX(-1);opacity:.64;filter:contrast(1.08) saturate(.65)}
+.visual:after{content:"";position:absolute;inset:0;background:linear-gradient(0deg,#071009c9,transparent 40%,#07100930);pointer-events:none}
+#overlay{position:absolute;inset:0;width:100%;height:100%;z-index:1}
+.scanframe{position:absolute;z-index:2;width:min(62%,250px);aspect-ratio:1;border:1px solid #8ad49a88;border-radius:50%;box-shadow:0 0 28px #70d98718,inset 0 0 28px #70d98712}
+.scanframe:before,.scanframe:after{content:"";position:absolute;background:#8ed99c;opacity:.7}
+.scanframe:before{height:1px;width:120%;left:-10%;top:50%;box-shadow:0 0 9px #7bd68d}
+.scanframe:after{width:1px;height:120%;top:-10%;left:50%;box-shadow:0 0 9px #7bd68d}
+.corner{position:absolute;z-index:3;color:#9de5aa;font-size:9px;letter-spacing:.14em;left:14px;top:13px}
+.visual-foot{position:absolute;z-index:3;bottom:13px;left:14px;right:14px;display:flex;justify-content:space-between;color:#9ab49e;font-size:9px;letter-spacing:.12em}
+.side{border:1px solid #263a2b;background:#101811;border-radius:8px;padding:19px;display:flex;flex-direction:column;gap:14px}
+.side h2{font-size:14px;letter-spacing:.08em;margin:0;color:var(--bright)}
+.instruction{font-size:12px;line-height:1.75;color:#c4d1c7;margin:0}
+.meter{height:5px;background:#26352a;border-radius:8px;overflow:hidden}.meter span{display:block;width:0;height:100%;background:linear-gradient(90deg,#4f9c61,#b0edba);box-shadow:0 0 12px #81d991;transition:width .18s}
+.progressline{display:flex;justify-content:space-between;font-size:9px;color:#91a397;letter-spacing:.12em}
+.btn{border:1px solid #6ca878;background:#1a2a1e;color:#d5f2da;padding:13px 14px;font:inherit;font-size:10px;letter-spacing:.12em;border-radius:5px;cursor:pointer;transition:.2s}
+.btn:hover{background:#263d2b;box-shadow:0 0 18px #76c48622}.btn:disabled{opacity:.45;cursor:not-allowed}
+.btn.secondary{background:transparent;border-color:#405746;color:#a9c2ad}
+.note{font-size:9px;line-height:1.6;color:#738879;margin:0}
+.hidden{display:none!important}
+.generated{width:78%;max-width:280px;aspect-ratio:1;position:relative;z-index:2;opacity:0;transition:opacity 1.3s;filter:drop-shadow(0 0 12px #76d38b55)}
+.generated.show{opacity:1}
+.fingerprint{width:220px;height:240px;position:relative;z-index:2}
+.finalcode{font-size:clamp(22px,5vw,34px);letter-spacing:.09em;text-align:center;color:var(--bright);padding:18px 8px;border:1px dashed #52795b;background:#101c13;border-radius:6px;text-shadow:0 0 15px #7ad48b44;word-break:break-word}
+.success{color:#9ce6a9;font-size:10px;letter-spacing:.16em}
+.footer{padding:13px 22px;border-top:1px solid var(--line);display:flex;justify-content:space-between;gap:12px;color:#637b68;font-size:9px;letter-spacing:.1em}
+@media(max-width:700px){.stage{grid-template-columns:1fr}.visual{min-height:290px}.steps{gap:5px}.step{padding:9px 7px}.step .name{font-size:9px}.footer{flex-direction:column}}
+</style>
+</head>
+<body>
+<div class="shell">
+  <header class="top">
+    <div class="brand">INCAST <small>OFFICE OF CIVILIAN AFFAIRS · IRIS DIVISION</small></div>
+    <div class="status" id="systemStatus">SYSTEM ONLINE</div>
+  </header>
+  <main class="content">
+    <p class="eyebrow">IRIS // BIOMETRIC ENROLMENT PROTOCOL 2095</p>
+    <h1 id="pageTitle">BIOMETRIC REGISTRATION</h1>
+    <p class="sub" id="pageSub">Complete all three verification stages to finalise your identity registration. Remain within the terminal's field of view until instructed otherwise.</p>
+
+    <div class="steps" aria-label="Registration stages">
+      <div class="step active" id="step1"><div class="num">STAGE 01</div><div class="name">FACIAL RECOGNITION</div></div>
+      <div class="step" id="step2"><div class="num">STAGE 02</div><div class="name">OCULAR VERIFICATION</div></div>
+      <div class="step" id="step3"><div class="num">STAGE 03</div><div class="name">DIGITAL IMPRESSION</div></div>
+    </div>
+
+    <section class="stage" id="scanStage">
+      <div class="visual" id="visual">
+        <video id="video" autoplay playsinline muted></video>
+        <canvas id="overlay"></canvas>
+        <div class="scanframe" id="scanframe"></div>
+        <div class="corner" id="visualLabel">LIVE FACIAL MAPPING</div>
+        <div class="visual-foot"><span id="visualLeft">CAMERA FEED // ACTIVE</span><span id="visualRight">AWAITING SUBJECT</span></div>
+        <canvas id="generated" class="generated hidden"></canvas>
+      </div>
+      <aside class="side">
+        <h2 id="stageTitle">FACIAL MAPPING</h2>
+        <p class="instruction" id="instruction">Position your face within the alignment frame. Remove any obstruction from the face and look directly towards the camera.</p>
+        <div class="progressline"><span id="progressLabel">SCAN PROGRESS</span><span id="percent">0%</span></div>
+        <div class="meter"><span id="bar"></span></div>
+        <button class="btn" id="actionBtn">INITIALISE CAMERA</button>
+        <button class="btn secondary hidden" id="nextBtn">CONTINUE TO NEXT STAGE</button>
+        <p class="note" id="note">CAMERA ACCESS REQUIRED · POSITION YOURSELF IN A WELL-LIT AREA</p>
+      </aside>
+    </section>
+
+    <section class="side hidden" id="fingerStage">
+      <h2>DIGITAL IMPRESSION CAPTURE</h2>
+      <p class="instruction" id="fingerInstruction">Select the verification method available on your device.</p>
+      <div id="fingerChoice" style="display:grid;gap:10px">
+        <button class="btn" id="readerChoice">DEVICE HAS A FINGERPRINT READER</button>
+        <button class="btn secondary" id="skipFinger">DEVICE DOES NOT HAVE A FINGERPRINT READER</button>
+      </div>
+      <div id="fingerScanPanel" class="hidden" style="display:grid;gap:12px">
+        <p class="instruction">Place your registered finger against your device's fingerprint reader. When your finger is in position, select BEGIN SCAN below.</p>
+        <div style="display:flex;justify-content:center;align-items:center;min-height:230px;background:#080e0a;border:1px solid #2b4432;border-radius:7px">
+          <svg id="fingerSvg" class="fingerprint" viewBox="0 0 220 240" fill="none" stroke="#80c991" stroke-width="2" stroke-linecap="round" opacity=".9">
+            <g id="fingerLines">
+              <path d="M110 214 C54 214 26 172 31 116 C35 64 67 28 110 28 C153 28 185 64 189 116 C194 172 166 214 110 214"/>
+              <path d="M110 198 C65 198 43 164 47 119 C51 77 75 47 110 47 C145 47 169 77 173 119 C177 164 155 198 110 198"/>
+              <path d="M110 181 C77 181 61 153 64 120 C67 89 85 65 110 65 C135 65 153 89 156 120 C159 153 143 181 110 181"/>
+              <path d="M110 164 C89 164 79 146 81 121 C83 101 94 82 110 82 C126 82 137 101 139 121 C141 146 131 164 110 164"/>
+              <path d="M110 147 C101 147 96 137 97 122 C98 109 103 99 110 99 C117 99 122 109 123 122 C124 137 119 147 110 147"/>
+              <path d="M31 116 C17 105 18 83 27 67"/><path d="M189 116 C203 105 202 83 193 67"/>
+              <path d="M48 174 C32 166 25 150 25 137"/><path d="M172 174 C188 166 195 150 195 137"/>
+              <path d="M67 199 C53 194 43 184 39 172"/><path d="M153 199 C167 194 177 184 181 172"/>
+            </g>
+          </svg>
+        </div>
+        <div class="progressline"><span>IMPRESSION CAPTURE</span><span id="fingerPercent">0%</span></div>
+        <div class="meter"><span id="fingerBar"></span></div>
+        <button class="btn" id="fingerBtn">BEGIN SCAN</button>
+        <p class="note">MAINTAIN CONTACT WITH THE DEVICE SENSOR DURING THE SCAN SEQUENCE</p>
+      </div>
+      <div id="fingerSkipPanel" class="hidden" style="display:grid;gap:12px">
+        <p class="instruction">Alternative verification route selected. A manual fingerprint reader is not available on this device. Continue to finalise your biometric registration.</p>
+        <p class="success">ALTERNATIVE VERIFICATION ROUTE ACCEPTED</p>
+        <button class="btn" id="continueWithoutFinger">CONTINUE REGISTRATION</button>
+      </div>
+    </section>
+
+    <section class="side hidden" id="completeStage" style="text-align:center;align-items:stretch">
+      <p class="success">● ALL VERIFICATION STAGES COMPLETE</p>
+      <h2 style="font-size:19px;line-height:1.5">BIOMETRIC REGISTRATION<br>SUCCESSFUL</h2>
+      <p class="instruction">Your biometric enrolment sequence has been completed. Your personal registration reference is shown below.</p>
+      <div class="eyebrow" style="margin:4px 0 0">PERSONAL REGISTRATION CODE</div>
+      <div class="finalcode" id="finalCode">IRIS-2095-000000</div>
+      <button class="btn" id="copyBtn">COPY REGISTRATION CODE</button>
+      <p class="instruction">Enter this code in the supplementary Identity &amp; Residency Verification form to associate your registration with your application.</p>
+      <p class="note">APPLICATION STATUS: AWAITING FINAL REVIEW</p>
+    </section>
+  </main>
+  <footer class="footer"><span>IRIS // REGISTRATION TERMINAL</span><span>INTERNAL SYSTEM · BUILD 09.95.3</span></footer>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js"></script>
+<script>
+const $=id=>document.getElementById(id);
+const video=$('video'), overlay=$('overlay'), ctx=overlay.getContext('2d');
+let camera=null, faceMesh=null, facePresent=false, scanTimer=null, progress=0, stage=1, retinalReady=false, fingerprintTimer=null, fingerProgress=0;
+const setProgress=n=>{$('bar').style.width=n+'%';$('percent').textContent=Math.round(n)+'%';};
+function setStage(n){
+ stage=n;
+ [1,2,3].forEach(i=>{$('step'+i).classList.toggle('active',i===n);$('step'+i).classList.toggle('done',i<n);});
+}
+function resizeCanvas(){const r=overlay.getBoundingClientRect();overlay.width=Math.max(1,Math.round(r.width*devicePixelRatio));overlay.height=Math.max(1,Math.round(r.height*devicePixelRatio));}
+window.addEventListener('resize',resizeCanvas);resizeCanvas();
+function drawFace(results){
+ ctx.clearRect(0,0,overlay.width,overlay.height);
+ const faces=results.multiFaceLandmarks||[];facePresent=faces.length>0;
+ if(!facePresent){$('visualRight').textContent='AWAITING SUBJECT';return;}
+ $('visualRight').textContent='SUBJECT DETECTED';
+ const pts=faces[0],w=overlay.width,h=overlay.height;
+ ctx.save();ctx.scale(-1,1);ctx.translate(-w,0);
+ ctx.fillStyle='#8fe3a0';ctx.strokeStyle='#75d68b';ctx.lineWidth=1.1*devicePixelRatio;
+ // Draw a restrained mesh of facial landmark points and selected connecting lines.
+ const connections=[[33,133],[133,362],[362,263],[33,263],[1,10],[61,291],[234,454],[10,152],[159,145],[386,374]];
+ for(const [a,b] of connections){const p=pts[a],q=pts[b];ctx.beginPath();ctx.moveTo(p.x*w,p.y*h);ctx.lineTo(q.x*w,q.y*h);ctx.stroke();}
+ for(let i=0;i<pts.length;i+=3){const p=pts[i];ctx.beginPath();ctx.arc(p.x*w,p.y*h,1.65*devicePixelRatio,0,Math.PI*2);ctx.fill();}
+ ctx.restore();
+}
+async function startCamera(){
+ $('actionBtn').disabled=true;$('actionBtn').textContent='CONNECTING TO CAMERA…';
+ try{
+  const stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'user',width:{ideal:1280},height:{ideal:720}},audio:false});
+  video.srcObject=stream;await video.play();
+  faceMesh=new FaceMesh({locateFile:file=>`https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}`});
+  faceMesh.setOptions({maxNumFaces:1,refineLandmarks:true,minDetectionConfidence:.55,minTrackingConfidence:.55});
+  faceMesh.onResults(drawFace);
+  camera=new Camera(video,{onFrame:async()=>{if(faceMesh)await faceMesh.send({image:video});},width:1280,height:720});
+  camera.start();
+  $('actionBtn').textContent='BEGIN FACIAL SCAN';$('actionBtn').disabled=false;
+  $('note').textContent='CAMERA LINK ESTABLISHED · FACIAL MAPPING READY';
+  $('systemStatus').textContent='CAMERA LINK ESTABLISHED';
+ }catch(e){
+  $('actionBtn').disabled=false;$('actionBtn').textContent='RETRY CAMERA CONNECTION';
+  $('note').textContent='CAMERA ACCESS WAS NOT AVAILABLE. CHECK PERMISSIONS AND ENSURE THE PAGE IS OPENED OVER HTTPS.';
+  $('systemStatus').textContent='CAMERA LINK INTERRUPTED';
+ }
+}
+function runFaceScan(){
+ if(!facePresent){$('note').textContent='NO SUBJECT DETECTED · POSITION YOUR FACE WITHIN THE FRAME';return;}
+ $('actionBtn').classList.add('hidden');$('stageTitle').textContent='FACIAL RECOGNITION IN PROGRESS';$('instruction').textContent='Maintain your position. Facial landmarks are being mapped and registered.';$('visualLabel').textContent='FACIAL LANDMARK MAPPING';
+ progress=0;setProgress(0);
+ scanTimer=setInterval(()=>{
+  if(facePresent)progress=Math.min(100,progress+2.1);
+  setProgress(progress);
+  if(progress>=100){clearInterval(scanTimer);$('visualRight').textContent='FACIAL MAP COMPLETE';$('instruction').textContent='Facial recognition sequence complete. Proceed to ocular verification.';$('nextBtn').classList.remove('hidden');$('note').textContent='STAGE 01 COMPLETE · RECORD ACCEPTED';$('systemStatus').textContent='STAGE 01 VERIFIED';}
+ },110);
+}
+function makeRetina(){
+ const c=$('generated'),size=520;c.width=size;c.height=size;const g=c.getContext('2d'),cx=size/2,cy=size/2;
+ g.clearRect(0,0,size,size);
+ const bg=g.createRadialGradient(cx,cy,20,cx,cy,245);bg.addColorStop(0,'#274b32');bg.addColorStop(.65,'#102819');bg.addColorStop(1,'#06100a');
+ g.fillStyle=bg;g.beginPath();g.arc(cx,cy,245,0,Math.PI*2);g.fill();
+ g.save();g.beginPath();g.arc(cx,cy,238,0,Math.PI*2);g.clip();
+ for(let i=0;i<34;i++){
+  const a=Math.random()*Math.PI*2,ex=cx+Math.cos(a)*(90+Math.random()*120),ey=cy+Math.sin(a)*(90+Math.random()*120);
+  g.beginPath();g.moveTo(cx,cy);g.bezierCurveTo(cx+Math.cos(a+.5)*70,cy+Math.sin(a+.5)*70,ex-Math.cos(a)*50,ey-Math.sin(a)*50,ex,ey);
+  g.strokeStyle=`rgba(${90+Math.random()*45|0},${170+Math.random()*65|0},${100+Math.random()*45|0},${.25+Math.random()*.5})`;g.lineWidth=1+Math.random()*3;g.stroke();
+ }
+ for(let i=0;i<230;i++){const a=Math.random()*Math.PI*2,r=30+Math.random()*205,x=cx+Math.cos(a)*r,y=cy+Math.sin(a)*r;g.fillStyle=`rgba(167,225,170,${Math.random()*.35})`;g.fillRect(x,y,2,2);}
+ g.restore();g.strokeStyle='#9be6a8';g.lineWidth=3;g.beginPath();g.arc(cx,cy,244,0,Math.PI*2);g.stroke();
+ g.fillStyle='#c2f0c9';g.beginPath();g.arc(cx,cy,28,0,Math.PI*2);g.fill();
+ g.fillStyle='#0b1b10';g.beginPath();g.arc(cx,cy,13,0,Math.PI*2);g.fill();
+}
+function startOcular(){
+ setStage(2);$('stageTitle').textContent='OCULAR / IRIS VERIFICATION';$('instruction').textContent='Move closer to the camera and align one eye with the centre of the targeting reticle. Hold still while the ocular pattern is acquired.';$('visualLabel').textContent='OCULAR ALIGNMENT // ACTIVE';$('visualLeft').textContent='IRIS IMAGING ARRAY';$('visualRight').textContent='SEARCHING FOR EYE';
+ $('scanframe').style.width='min(42%,190px)';$('scanframe').style.borderRadius='50% 50% 45% 45%';
+ $('nextBtn').classList.add('hidden');$('actionBtn').classList.remove('hidden');$('actionBtn').textContent='INITIATE OCULAR SCAN';$('actionBtn').disabled=false;
+ $('note').textContent='ALIGN EYE WITH RETICLE · MAINTAIN POSITION';
+}
+function runOcular(){
+ if(!facePresent){$('note').textContent='SUBJECT NOT DETECTED · MOVE CLOSER TO THE CAMERA';return;}
+ $('actionBtn').classList.add('hidden');let p=0;setProgress(0);$('stageTitle').textContent='ACQUIRING OCULAR PATTERN';
+ const t=setInterval(()=>{p=Math.min(100,p+2.5);setProgress(p);if(p>=100){clearInterval(t);makeRetina();$('generated').classList.remove('hidden');requestAnimationFrame(()=>$('generated').classList.add('show'));$('scanframe').classList.add('hidden');$('visualLabel').textContent='RETINAL PATTERN ACQUIRED';$('visualRight').textContent='OCULAR MAP COMPLETE';$('instruction').textContent='Ocular pattern acquired and indexed. Proceed to digital impression capture.';$('nextBtn').classList.remove('hidden');$('note').textContent='STAGE 02 COMPLETE · OCULAR RECORD ACCEPTED';$('systemStatus').textContent='STAGE 02 VERIFIED';}},95);
+}
+function startFingerprint(){
+ $('scanStage').classList.add('hidden');$('fingerStage').classList.remove('hidden');setStage(3);$('pageTitle').textContent='DIGITAL IMPRESSION CAPTURE';$('pageSub').textContent='Final biometric stage // manual impression sequence';$('systemStatus').textContent='SENSOR ARRAY READY';
+}
+function beginFinger(){if(fingerprintTimer)return;fingerProgress=0;$('fingerBtn').textContent='CAPTURING IMPRESSION…';$('fingerBtn').disabled=true;fingerprintTimer=setInterval(()=>{fingerProgress=Math.min(100,fingerProgress+2);$('fingerBar').style.width=fingerProgress+'%';$('fingerPercent').textContent=fingerProgress+'%';$('fingerSvg').style.filter=`drop-shadow(0 0 ${5+fingerProgress/5}px #8be39a)`;if(fingerProgress>=100){clearInterval(fingerprintTimer);fingerprintTimer=null;finishAll();}},55);} 
+function chooseFingerprintReader(){ $('fingerChoice').classList.add('hidden');$('fingerScanPanel').classList.remove('hidden');$('fingerInstruction').textContent='Fingerprint reader detected. Follow the instructions below to complete the impression sequence.'; }
+function skipFingerprint(){ $('fingerChoice').classList.add('hidden');$('fingerSkipPanel').classList.remove('hidden');$('fingerInstruction').textContent='Alternative verification procedure';$('systemStatus').textContent='ALTERNATIVE ROUTE SELECTED'; }
+function finishAll(){
+ const code='IRIS-2095-'+String(Math.floor(Math.random()*1000000)).padStart(6,'0');
+ $('fingerStage').classList.add('hidden');$('completeStage').classList.remove('hidden');$('pageTitle').textContent='REGISTRATION SEQUENCE COMPLETE';$('pageSub').textContent='IRIS // enrolment record generated';$('finalCode').textContent=code;$('systemStatus').textContent='ENROLMENT COMPLETE';
+}
+$('actionBtn').addEventListener('click',()=>{if(!video.srcObject)startCamera();else if(stage===1)runFaceScan();else if(stage===2)runOcular();});
+$('nextBtn').addEventListener('click',()=>{if(stage===1)startOcular();else if(stage===2)startFingerprint();});
+$('readerChoice').addEventListener('click',chooseFingerprintReader);
+$('skipFinger').addEventListener('click',skipFingerprint);
+$('continueWithoutFinger').addEventListener('click',finishAll);
+$('fingerBtn').addEventListener('click',beginFinger);
+$('copyBtn').addEventListener('click',async()=>{const code=$('finalCode').textContent;try{await navigator.clipboard.writeText(code);$('copyBtn').textContent='CODE COPIED';}catch(e){$('copyBtn').textContent='SELECT AND COPY CODE';}});
+</script>
+</body>
+</html>
